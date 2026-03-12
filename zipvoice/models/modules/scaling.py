@@ -35,15 +35,17 @@ from torch import Tensor
 
 if torch.cuda.is_available():
     DEVICE_TYPE = "cuda"
-elif torch.backends.mps.is_available():
-    DEVICE_TYPE = "mps"
 else:
     DEVICE_TYPE = "cpu"
+# Note: MPS doesn't support torch.amp.autocast in PyTorch <2.4.
+# Since all autocast calls here use enabled=False (no-op), using "cpu" is safe.
+
+_ACTUAL_DEVICE = "mps" if torch.backends.mps.is_available() else DEVICE_TYPE
 
 def get_memory_allocated():
-    if DEVICE_TYPE == "cuda":
+    if _ACTUAL_DEVICE == "cuda":
         return torch.cuda.memory_allocated()
-    elif DEVICE_TYPE == "mps":
+    elif _ACTUAL_DEVICE == "mps":
         return torch.mps.current_allocated_memory()
     else:
         return 0
